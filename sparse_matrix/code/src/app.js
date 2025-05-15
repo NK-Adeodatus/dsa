@@ -9,7 +9,7 @@ class SparseMatrix {
         this.data = []
     }
 
-    readDataFromFile(filePath) {
+    static readDataFromFile(filePath) {
         const lines = fs.readFileSync(filePath, 'utf-8')
         .split('\n')
         .map(line => line.trim())
@@ -38,9 +38,9 @@ class SparseMatrix {
                 throw new Error("Input file has wrong format")
             }
 
-            const row = parseInt(data[0]).trim()
-            const col = parseInt(data[1]).trim()
-            const value = parseFloat(data[2]).trim()
+            const row = parseInt(data[0].trim())
+            const col = parseInt(data[1].trim())
+            const value = parseFloat(data[2].trim())
 
             if(isNaN(row) || isNaN(col) || isNaN(value)) {
                 throw new Error("Input file has wrong format")
