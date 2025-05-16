@@ -48,6 +48,7 @@ class SparseMatrix {
 
             matrix.setElement(row, col, value)
         }
+        console.log('readDataFromFile completed running')
         return matrix
     }
 
@@ -57,6 +58,7 @@ class SparseMatrix {
     }
 
     setElement(row, col, value) {
+        console.log('setElement called')
         const index = this.data.findIndex(entry => entry.row === row && entry.col === col)
         if(index !== -1) {
             if(value === 0) {
@@ -67,24 +69,28 @@ class SparseMatrix {
         } else {
             this.data.push({ row, col, value })
         }
+        console.log('setElement completed running')
     }
 
     print() {
+    console.log('print called')
     console.log(`rows=${this.numRows}`);
     console.log(`cols=${this.numCols}`);
 
-    for (let i = 0; i < this.values.length && i < 5; i++) {
-        const e = this.values[i];
+    for (let i = 0; i < this.data.length && i < 5; i++) {
+        const e = this.data[i];
         console.log(`(${e.row}, ${e.col}, ${e.value})`);
     }
+    console.log('print completed running')
 }
 
 }
 
-const file1 = path.join(__dirname, '../../sample_inputs/easy_sample_01_2.txt')
-const file2 = path.join(__dirname, '../../sample_inputs/easy_sample_01_3.txt')
+const file1 = path.join(__dirname, '../../sample_inputs/sample1.txt')
+const file2 = path.join(__dirname, '../../sample_inputs/sample2.txt')
 
 function add(A, B) {
+    console.log('add called')
     if(A.numRows !== B.numRows || A.numCols !== B.numCols) {
         throw new Error("Matrices have different dimensions")
     }
@@ -94,8 +100,8 @@ function add(A, B) {
     const map = new Map();
     const key = (r, c) => `${r},${c}`;
 
-    for (const e of A.values) map.set(key(e.row, e.col), e.value);
-    for (const e of B.values) {
+    for (const e of A.data) map.set(key(e.row, e.col), e.value);
+    for (const e of B.data) {
         const k = key(e.row, e.col);
         map.set(k, (map.get(k) || 0) + e.value);
     }
@@ -106,12 +112,13 @@ function add(A, B) {
             result.setElement(r, c, val);
         }
     }
+    console.log('add completed running')
     return result;
 }
 
 function subtractMatrices(A, B) {
     const negated = new SparseMatrix(B.numRows, B.numCols);
-    for (const e of B.values) {
+    for (const e of B.data) {
         negated.setElement(e.row, e.col, -e.value);
     }
     return addMatrices(A, negated);
@@ -123,8 +130,8 @@ function multiplyMatrices(A, B) {
     }
 
     const result = new SparseMatrix(A.numRows, B.numCols);
-    for (const a of A.values) {
-        for (const b of B.values) {
+    for (const a of A.data) {
+        for (const b of B.data) {
             if (a.col === b.row) {
                 const prev = result.getElement(a.row, b.col);
                 result.setElement(a.row, b.col, prev + a.value * b.value);
