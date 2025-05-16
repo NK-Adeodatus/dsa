@@ -24,9 +24,6 @@ class SparseMatrix {
         const numRows = parseInt(lines[0].split('=')[1])
         const numCols = parseInt(lines[1].split('=')[1])
 
-        console.log(`Number of rows: ${numRows}`)
-        console.log(`Number of columns: ${numCols}`)
-
         const matrix = new SparseMatrix(numRows, numCols)
 
         for(let i = 2; i <= lines.length - 1; i++) {
@@ -128,11 +125,34 @@ function add(A, B) {
 // Function to subtract two sparse matrices
 // This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function subtractMatrices(A, B) {
-    const negated = new SparseMatrix(B.numRows, B.numCols);
-    for (const e of B.data) {
-        negated.setElement(e.row, e.col, -e.value);
+    console.log('subtractMatrices called');
+    if (A.numRows !== B.numRows || A.numCols !== B.numCols) {
+        throw new Error("Matrices have different dimensions");
     }
-    return add(A, negated);
+
+    const result = new SparseMatrix(A.numRows, A.numCols);
+
+    const map = new Map();
+    const key = (r, c) => `${r},${c}`;
+
+    for (const e of A.data) {
+        map.set(key(e.row, e.col), e.value);
+    }
+
+    for (const e of B.data) {
+        const k = key(e.row, e.col);
+        map.set(k, (map.get(k) || 0) - e.value);
+    }
+
+    for (const [k, val] of map.entries()) {
+        if (val !== 0) {
+            const [r, c] = k.split(',').map(Number);
+            result.setElement(r, c, val);
+        }
+    }
+
+    console.log('subtractMatrices completed running');
+    return result;
 }
 
 // Function to multiply two sparse matrices
