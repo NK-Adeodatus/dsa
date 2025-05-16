@@ -2,6 +2,7 @@ const fs = require('fs')
 const readline = require('readline')
 const path = require('path')
 
+// SparseMatrix class to represent a sparse matrix
 class SparseMatrix {
     constructor(numRows, numCols) {
         this.numRows = numRows
@@ -9,6 +10,7 @@ class SparseMatrix {
         this.data = []
     }
 
+    // Static method to read data from a file and create a SparseMatrix instance
     static readDataFromFile(filePath) {
         const lines = fs.readFileSync(filePath, 'utf-8')
         .split('\n')
@@ -52,11 +54,13 @@ class SparseMatrix {
         return matrix
     }
 
+    // Method to get the value at a specific position in the matrix
     getElement(row, col) {
         const entry = this.data.find(entry => entry.row === row && entry.col === col)
         return entry ? entry.value : 0
     }
 
+    // Method to set the value at a specific position in the matrix
     setElement(row, col, value) {
         console.log('setElement called')
         const index = this.data.findIndex(entry => entry.row === row && entry.col === col)
@@ -72,12 +76,13 @@ class SparseMatrix {
         console.log('setElement completed running')
     }
 
+    // Method to print the resulting matrix
     print() {
     console.log('print called')
     console.log(`rows=${this.numRows}`);
     console.log(`cols=${this.numCols}`);
 
-    for (let i = 0; i < this.data.length && i < 5; i++) {
+    for (let i = 0; i < this.data.length; i++) {
         const e = this.data[i];
         console.log(`(${e.row}, ${e.col}, ${e.value})`);
     }
@@ -86,9 +91,13 @@ class SparseMatrix {
 
 }
 
+// Sample input files
 const file1 = path.join(__dirname, '../../sample_inputs/sample1.txt')
 const file2 = path.join(__dirname, '../../sample_inputs/sample2.txt')
 
+
+// Function to add two sparse matrices
+// This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function add(A, B) {
     console.log('add called')
     if(A.numRows !== B.numRows || A.numCols !== B.numCols) {
@@ -116,6 +125,8 @@ function add(A, B) {
     return result;
 }
 
+// Function to subtract two sparse matrices
+// This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function subtractMatrices(A, B) {
     const negated = new SparseMatrix(B.numRows, B.numCols);
     for (const e of B.data) {
@@ -124,6 +135,8 @@ function subtractMatrices(A, B) {
     return add(A, negated);
 }
 
+// Function to multiply two sparse matrices
+// This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function multiplyMatrices(A, B) {
     if (A.numCols !== B.numRows) {
         throw new Error('Matrix multiplication not possible: incompatible dimensions');
@@ -141,15 +154,20 @@ function multiplyMatrices(A, B) {
     return result;
 }
 
+// Read input from the user
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
 
+// Function to prompt the user for input
 function promptUser(question) {
     return new Promise(resolve => rl.question(question, resolve));
 }
 
+// Main function to execute the operations
+// This function prompts the user for an operation and performs it on the two matrices
+// It then prints the result
 (async function main() {
     const op = await promptUser('Enter operation (+, -, *): ');
     const A = SparseMatrix.readDataFromFile(file1)
