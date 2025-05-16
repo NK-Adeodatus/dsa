@@ -121,7 +121,7 @@ function subtractMatrices(A, B) {
     for (const e of B.data) {
         negated.setElement(e.row, e.col, -e.value);
     }
-    return addMatrices(A, negated);
+    return add(A, negated);
 }
 
 function multiplyMatrices(A, B) {
