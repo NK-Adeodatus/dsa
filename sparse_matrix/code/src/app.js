@@ -12,6 +12,7 @@ class SparseMatrix {
 
     // Static method to read data from a file and create a SparseMatrix instance
     static readDataFromFile(filePath) {
+        console.log('readDataFromFile called')
         const lines = fs.readFileSync(filePath, 'utf-8')
         .split('\n')
         .map(line => line.trim())
@@ -59,7 +60,6 @@ class SparseMatrix {
 
     // Method to set the value at a specific position in the matrix
     setElement(row, col, value) {
-        console.log('setElement called')
         const index = this.data.findIndex(entry => entry.row === row && entry.col === col)
         if(index !== -1) {
             if(value === 0) {
@@ -70,27 +70,28 @@ class SparseMatrix {
         } else {
             this.data.push({ row, col, value })
         }
-        console.log('setElement completed running')
     }
 
     // Method to print the resulting matrix
     print() {
-    console.log('print called')
     console.log(`rows=${this.numRows}`);
     console.log(`cols=${this.numCols}`);
-
     for (let i = 0; i < this.data.length; i++) {
         const e = this.data[i];
         console.log(`(${e.row}, ${e.col}, ${e.value})`);
     }
-    console.log('print completed running')
 }
 
 }
 
 // Sample input files
-const file1 = path.join(__dirname, '../../sample_inputs/sample1.txt')
-const file2 = path.join(__dirname, '../../sample_inputs/sample2.txt')
+// const file1 = path.join(__dirname, '../../sample_inputs/sample1.txt')
+// const file2 = path.join(__dirname, '../../sample_inputs/sample2.txt')
+// const file1 = path.join(__dirname, '../../sample_inputs/easy_sample_01_2.txt')
+// const file2 = path.join(__dirname, '../../sample_inputs/easy_sample_01_3.txt')
+// const file1 = path.join(__dirname, '../../sample_inputs/easy_sample_02_1.txt')
+// const file2 = path.join(__dirname, '../../sample_inputs/easy_sample_02_2.txt')
+
 
 
 // Function to add two sparse matrices
@@ -158,12 +159,14 @@ function subtractMatrices(A, B) {
 // Function to multiply two sparse matrices
 // This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function multiplyMatrices(A, B) {
+    console.log('multiplyMatrices called');
     if (A.numCols !== B.numRows) {
         throw new Error('Matrix multiplication not possible: incompatible dimensions');
     }
 
     const result = new SparseMatrix(A.numRows, B.numCols);
     for (const a of A.data) {
+        console.log('outer for loop called')
         for (const b of B.data) {
             if (a.col === b.row) {
                 const prev = result.getElement(a.row, b.col);
@@ -171,6 +174,7 @@ function multiplyMatrices(A, B) {
             }
         }
     }
+    console.log('multiplyMatrices completed running');
     return result;
 }
 
@@ -189,7 +193,27 @@ function promptUser(question) {
 // This function prompts the user for an operation and performs it on the two matrices
 // It then prints the result
 (async function main() {
-    const op = await promptUser('Enter operation (+, -, *): ');
+    let op
+
+    while(true) {
+        op = await promptUser('Enter an operation (+, -, *): ');
+        if(op === '+' || op === '-' || op === '*') {
+            break
+        } else {
+            console.log('Invalid operation. Please enter +, - or *')
+        }
+    }
+
+    let file1
+    let file2
+    if(op === '+' || op === '-') {
+        file1 = path.join(__dirname, '../../sample_inputs/easy_sample_02_1.txt')
+        file2 = path.join(__dirname, '../../sample_inputs/easy_sample_02_2.txt')
+    } else if(op === '*') {
+        file1 = path.join(__dirname, '../../sample_inputs/easy_sample_01_2.txt')
+        file2 = path.join(__dirname, '../../sample_inputs/easy_sample_01_3.txt')
+    }
+
     const A = SparseMatrix.readDataFromFile(file1)
     const B = SparseMatrix.readDataFromFile(file2)
 
@@ -205,7 +229,7 @@ function promptUser(question) {
         throw new Error('Invalid operation')
     }
 
-    console.log('Result:')
+    console.log('Result:\n')
     result.print()
     rl.close()
     
