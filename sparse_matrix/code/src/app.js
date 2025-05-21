@@ -84,20 +84,13 @@ class SparseMatrix {
 
 }
 
-// Sample input files
-// const file1 = path.join(__dirname, '../../sample_inputs/sample1.txt')
-// const file2 = path.join(__dirname, '../../sample_inputs/sample2.txt')
-// const file1 = path.join(__dirname, '../../sample_inputs/easy_sample_01_2.txt')
-// const file2 = path.join(__dirname, '../../sample_inputs/easy_sample_01_3.txt')
-// const file1 = path.join(__dirname, '../../sample_inputs/easy_sample_02_1.txt')
-// const file2 = path.join(__dirname, '../../sample_inputs/easy_sample_02_2.txt')
+
 
 
 
 // Function to add two sparse matrices
 // This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function add(A, B) {
-    console.log('add called')
     if(A.numRows !== B.numRows || A.numCols !== B.numCols) {
         throw new Error("Matrices have different dimensions")
     }
@@ -119,14 +112,12 @@ function add(A, B) {
             result.setElement(r, c, val);
         }
     }
-    console.log('add completed running')
     return result;
 }
 
 // Function to subtract two sparse matrices
 // This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function subtractMatrices(A, B) {
-    console.log('subtractMatrices called');
     if (A.numRows !== B.numRows || A.numCols !== B.numCols) {
         throw new Error("Matrices have different dimensions");
     }
@@ -152,12 +143,10 @@ function subtractMatrices(A, B) {
         }
     }
 
-    console.log('subtractMatrices completed running');
     return result;
 }
 
-// Function to multiply two sparse matrices
-// This function takes two SparseMatrix instances and returns a new SparseMatrix instance
+
 function multiplyMatrices(A, B) {
     console.log('multiplyMatrices called');
     if (A.numCols !== B.numRows) {
@@ -165,15 +154,29 @@ function multiplyMatrices(A, B) {
     }
 
     const result = new SparseMatrix(A.numRows, B.numCols);
+    
+    // Create a map to organize B's elements by row for quick lookup
+    const bByRow = new Map();
+    for (const b of B.data) {
+        if (!bByRow.has(b.row)) {
+            bByRow.set(b.row, []);
+        }
+        bByRow.get(b.row).push(b);
+    }
+    
+    // For each element in A, find matching elements in B by row
     for (const a of A.data) {
-        console.log('outer for loop called')
-        for (const b of B.data) {
-            if (a.col === b.row) {
+        // Only process if B has elements in the corresponding row
+        const bElements = bByRow.get(a.col);
+        if (bElements) {
+            // For each matching B element, calculate the product contribution
+            for (const b of bElements) {
                 const prev = result.getElement(a.row, b.col);
                 result.setElement(a.row, b.col, prev + a.value * b.value);
             }
         }
     }
+    
     console.log('multiplyMatrices completed running');
     return result;
 }
