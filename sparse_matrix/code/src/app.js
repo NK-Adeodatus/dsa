@@ -2,7 +2,6 @@ const fs = require('fs')
 const path = require('path')
 const readline = require('readline')
 
-// SparseMatrix class to represent a sparse matrix
 class SparseMatrix {
     constructor(numRows, numCols) {
         this.numRows = numRows
@@ -75,7 +74,6 @@ class SparseMatrix {
         return this.data.get(SparseMatrix.key(row, col)) || 0
     }
 
-    // Method to set the value at a specific position in the matrix
     setElement(row, col, value) {
         const k = SparseMatrix.key(row, col)
         
