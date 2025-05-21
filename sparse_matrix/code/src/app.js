@@ -1,239 +1,236 @@
 const fs = require('fs')
-const readline = require('readline')
 const path = require('path')
+const readline = require('readline')
 
 // SparseMatrix class to represent a sparse matrix
 class SparseMatrix {
     constructor(numRows, numCols) {
         this.numRows = numRows
         this.numCols = numCols
-        this.data = []
+        // Use Map for O(1) lookups instead of array with linear search
+        this.data = new Map()
     }
 
-    // Static method to read data from a file and create a SparseMatrix instance
-    static readDataFromFile(filePath) {
-        console.log('readDataFromFile called')
-        const lines = fs.readFileSync(filePath, 'utf-8')
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
+    // Generate unique key for storing elements
+    static key(row, col) {
+        return `${row},${col}`
+    }
 
-        if(!lines[0].startsWith('rows=')) {
+    // Static method to read data from a file
+    static readDataFromFile(filePath) {
+        const content = fs.readFileSync(filePath, 'utf-8')
+        const lines = content.split('\n')
+        let lineIndex = 0
+        
+        // Skip empty lines at the beginning
+        while (lineIndex < lines.length && lines[lineIndex].trim() === '') {
+            lineIndex++
+        }
+        
+        if (lineIndex >= lines.length || !lines[lineIndex].startsWith('rows=')) {
             throw new Error("Input file has wrong format")
         }
 
-        const numRows = parseInt(lines[0].split('=')[1])
-        const numCols = parseInt(lines[1].split('=')[1])
-
-        const matrix = new SparseMatrix(numRows, numCols)
-
-        for(let i = 2; i <= lines.length - 1; i++) {
-            const line = lines[i]
-            if(!line.startsWith('(') || !line.endsWith(')')) {
-                throw new Error("Input file has wrong format")
-            }
-
-            const data = line.slice(1, -1).split(',')
-            if(data.length !== 3) {
-                throw new Error("Input file has wrong format")
-            }
-
-            const row = parseInt(data[0].trim())
-            const col = parseInt(data[1].trim())
-            const value = parseFloat(data[2].trim())
-
-            if(isNaN(row) || isNaN(col) || isNaN(value)) {
-                throw new Error("Input file has wrong format")
-            }
-
-            matrix.setElement(row, col, value)
+        const numRows = parseInt(lines[lineIndex].split('=')[1])
+        lineIndex++
+        
+        if (lineIndex >= lines.length || !lines[lineIndex].startsWith('cols=')) {
+            throw new Error("Input file has wrong format")
         }
-        console.log('readDataFromFile completed running')
+        
+        const numCols = parseInt(lines[lineIndex].split('=')[1])
+        lineIndex++
+        
+        const matrix = new SparseMatrix(numRows, numCols)
+        
+        // Process all data entries at once
+        for (; lineIndex < lines.length; lineIndex++) {
+            const line = lines[lineIndex].trim()
+            if (line === '') continue
+            
+            if (!line.startsWith('(') || !line.endsWith(')')) {
+                throw new Error("Input file has wrong format")
+            }
+            
+            const content = line.substring(1, line.length - 1)
+            const parts = content.split(',')
+            
+            if (parts.length !== 3) {
+                throw new Error("Input file has wrong format")
+            }
+            
+            const row = parseInt(parts[0].trim())
+            const col = parseInt(parts[1].trim())
+            const value = parseFloat(parts[2].trim())
+            
+            if (!isNaN(row) && !isNaN(col) && !isNaN(value) && value !== 0) {
+                matrix.setElement(row, col, value)
+            }
+        }
+        
         return matrix
     }
-
     // Method to get the value at a specific position in the matrix
     getElement(row, col) {
-        const entry = this.data.find(entry => entry.row === row && entry.col === col)
-        return entry ? entry.value : 0
+        return this.data.get(SparseMatrix.key(row, col)) || 0
     }
 
     // Method to set the value at a specific position in the matrix
     setElement(row, col, value) {
-        const index = this.data.findIndex(entry => entry.row === row && entry.col === col)
-        if(index !== -1) {
-            if(value === 0) {
-                this.data.splice(index, 1)
-            } else{
-                this.data[index].value = value
-            }
+        const k = SparseMatrix.key(row, col)
+        
+        if (value === 0) {
+            this.data.delete(k)
         } else {
-            this.data.push({ row, col, value })
+            this.data.set(k, value)
         }
     }
 
-    // Method to print the resulting matrix
     print() {
-    console.log(`rows=${this.numRows}`);
-    console.log(`cols=${this.numCols}`);
-    for (let i = 0; i < this.data.length; i++) {
-        const e = this.data[i];
-        console.log(`(${e.row}, ${e.col}, ${e.value})`);
+        console.log('\nNow the result is being printed to the file "result.txt"\n')
+
+        const resultPath = path.join(__dirname, 'result.txt');
+        fs.writeFileSync(resultPath, `rows=${this.numRows}\ncols=${this.numCols}\n`);
+        
+        // Convert Map to array for printing
+        for (const [key, value] of this.data) {
+            const [row, col] = key.split(',').map(Number)
+            fs.appendFileSync(resultPath, `(${row}, ${col}, ${value})\n`);
+        }
+        console.log('finished printing result to the file "result.txt"')
     }
 }
 
-}
-
-
-
-
-
 // Function to add two sparse matrices
-// This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function add(A, B) {
-    if(A.numRows !== B.numRows || A.numCols !== B.numCols) {
+    if (A.numRows !== B.numRows || A.numCols !== B.numCols) {
         throw new Error("Matrices have different dimensions")
     }
 
     const result = new SparseMatrix(A.numRows, A.numCols)
-
-    const map = new Map();
-    const key = (r, c) => `${r},${c}`;
-
-    for (const e of A.data) map.set(key(e.row, e.col), e.value);
-    for (const e of B.data) {
-        const k = key(e.row, e.col);
-        map.set(k, (map.get(k) || 0) + e.value);
+    
+    // First, add all elements from A
+    for (const [key, value] of A.data) {
+        result.data.set(key, value)
     }
-
-    for (const [k, val] of map.entries()) {
-        if (val !== 0) {
-            const [r, c] = k.split(',').map(Number);
-            result.setElement(r, c, val);
+    
+    // Then add or update with elements from B
+    for (const [key, value] of B.data) {
+        const sum = (result.data.get(key) || 0) + value
+        if (sum !== 0) {
+            result.data.set(key, sum)
+        } else {
+            // If sum is zero, remove the element
+            result.data.delete(key)
         }
     }
-    return result;
+    console.log('addition completed.')
+    return result
 }
 
 // Function to subtract two sparse matrices
-// This function takes two SparseMatrix instances and returns a new SparseMatrix instance
 function subtractMatrices(A, B) {
     if (A.numRows !== B.numRows || A.numCols !== B.numCols) {
-        throw new Error("Matrices have different dimensions");
+        throw new Error("Matrices have different dimensions")
     }
 
-    const result = new SparseMatrix(A.numRows, A.numCols);
-
-    const map = new Map();
-    const key = (r, c) => `${r},${c}`;
-
-    for (const e of A.data) {
-        map.set(key(e.row, e.col), e.value);
+    const result = new SparseMatrix(A.numRows, A.numCols)
+    
+    // add all elements from A
+    for (const [key, value] of A.data) {
+        result.data.set(key, value)
     }
-
-    for (const e of B.data) {
-        const k = key(e.row, e.col);
-        map.set(k, (map.get(k) || 0) - e.value);
-    }
-
-    for (const [k, val] of map.entries()) {
-        if (val !== 0) {
-            const [r, c] = k.split(',').map(Number);
-            result.setElement(r, c, val);
+    
+    // subtract elements from B
+    for (const [key, value] of B.data) {
+        const diff = (result.data.get(key) || 0) - value
+        if (diff !== 0) {
+            result.data.set(key, diff)
+        } else {
+            result.data.delete(key)
         }
     }
-
-    return result;
+    console.log('Subtraction complete')
+    return result
 }
 
-
+// Multiply the two matrices
 function multiplyMatrices(A, B) {
-    console.log('multiplyMatrices called');
     if (A.numCols !== B.numRows) {
         throw new Error('Matrix multiplication not possible: incompatible dimensions');
     }
+    console.log('Multiplying Matrices...')
+    const EPSILON = 1e-10;
+    const tempResult = Array(A.numRows).fill(null).map(() => Array(B.numCols).fill(0));
 
-    const result = new SparseMatrix(A.numRows, B.numCols);
-    
-    // Create a map to organize B's elements by row for quick lookup
-    const bByRow = new Map();
-    for (const b of B.data) {
-        if (!bByRow.has(b.row)) {
-            bByRow.set(b.row, []);
-        }
-        bByRow.get(b.row).push(b);
-    }
-    
-    // For each element in A, find matching elements in B by row
-    for (const a of A.data) {
-        // Only process if B has elements in the corresponding row
-        const bElements = bByRow.get(a.col);
-        if (bElements) {
-            // For each matching B element, calculate the product contribution
-            for (const b of bElements) {
-                const prev = result.getElement(a.row, b.col);
-                result.setElement(a.row, b.col, prev + a.value * b.value);
+    for (const [aKey, aValue] of A.data) {
+        const [aRow, aCol] = aKey.split(',').map(Number);
+
+        for (const [bKey, bValue] of B.data) {
+            const [bRow, bCol] = bKey.split(',').map(Number);
+
+            if (aCol === bRow) {
+                tempResult[aRow][bCol] += aValue * bValue;
             }
         }
     }
-    
-    console.log('multiplyMatrices completed running');
+
+    const result = new SparseMatrix(A.numRows, B.numCols);
+    for (let i = 0; i < tempResult.length; i++) {
+        for (let j = 0; j < tempResult[i].length; j++) {
+            if (Math.abs(tempResult[i][j]) > EPSILON) {
+                result.setElement(i, j, tempResult[i][j]);
+            }
+        }
+    }
+    console.log('Multiplication Complete.')
     return result;
 }
 
-// Read input from the user
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
 
-// Function to prompt the user for input
-function promptUser(question) {
-    return new Promise(resolve => rl.question(question, resolve));
-}
 
-// Main function to execute the operations
-// This function prompts the user for an operation and performs it on the two matrices
-// It then prints the result
-(async function main() {
+
+// main function
+async function main() {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    })
+
+    const promptUser = (question) => new Promise(resolve => rl.question(question, resolve))
+    
     let op
-
-    while(true) {
-        op = await promptUser('Enter an operation (+, -, *): ');
-        if(op === '+' || op === '-' || op === '*') {
-            break
-        } else {
-            console.log('Invalid operation. Please enter +, - or *')
-        }
+    while (true) {
+        op = await promptUser('Enter an operation (+, -, *): ')
+        if (['+', '-', '*'].includes(op)) break
+        console.log('Invalid operation. Please enter +, - or *')
     }
 
-    let file1
-    let file2
-    if(op === '+' || op === '-') {
+    // Choose files that are compatible with the selected operation
+    let file1, file2
+    if (op === '+' || op === '-') {
         file1 = path.join(__dirname, '../../sample_inputs/easy_sample_02_1.txt')
         file2 = path.join(__dirname, '../../sample_inputs/easy_sample_02_2.txt')
-    } else if(op === '*') {
+    } else {
         file1 = path.join(__dirname, '../../sample_inputs/easy_sample_01_2.txt')
         file2 = path.join(__dirname, '../../sample_inputs/easy_sample_01_3.txt')
     }
 
+    // Load matrices
     const A = SparseMatrix.readDataFromFile(file1)
     const B = SparseMatrix.readDataFromFile(file2)
 
+    // Perform operation
     let result
-
-    if(op === '+') {
-        result = add(A, B)
-    } else if(op === '-') {
-        result = subtractMatrices(A, B)
-    } else if(op === '*') {
-        result = multiplyMatrices(A, B)
-    } else {
-        throw new Error('Invalid operation')
+    switch (op) {
+        case '+': result = add(A, B); break
+        case '-': result = subtractMatrices(A, B); break
+        case '*': result = multiplyMatrices(A, B); break
     }
 
-    console.log('Result:\n')
     result.print()
     rl.close()
-    
-}) ()
+}
+
+// Run the program
+main()
