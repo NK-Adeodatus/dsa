@@ -30,7 +30,7 @@ Edit
 - Each remaining line specifies a non-zero entry in the format: `(row, col, value)`.
 
 ## Directory Structure
-
+```text
 project-root/
 │
 ├── sample_inputs/
@@ -46,10 +46,8 @@ project-root/
 │       ├── main.js # Main application script
 │       └── result.txt # Output file generated after operations
 └── README.md
+```
 
-bash
-Copy
-Edit
 
 ## Getting Started
 
