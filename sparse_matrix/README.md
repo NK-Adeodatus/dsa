@@ -58,26 +58,23 @@ Edit
 ```bash
 git clone https://github.com/your-username/sparse-matrix-operations.git
 cd sparse-matrix-operations
+```
 2. Install Node.js
 Ensure Node.js is installed. You can check using:
 
-bash
-Copy
-Edit
+```bash
 node -v
+```
 If not installed, download it from https://nodejs.org.
 
 3. Run the App
-bash
-Copy
-Edit
+```bash
 node src/main.js
+```
 You'll be prompted to enter an operation (+, -, or *). The app will read predefined input files, perform the operation, and save the result to results/result.txt.
 
 Example Usage
-bash
-Copy
-Edit
+```bash
 Enter an operation (+, -, *): *
 Multiplying Matrices...
 
@@ -85,3 +82,4 @@ Multiplication Complete
 
 Now the result is being printed on the file "result.txt"
 Finished printing result
+```
