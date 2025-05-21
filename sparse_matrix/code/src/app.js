@@ -87,7 +87,7 @@ class SparseMatrix {
     }
 
     print() {
-        console.log('\nNow the result is being printed to the file "result.txt"\n')
+        console.log('\nNow the result is being printed to the file "result.txt" located in the same directory as app.js\n')
 
         const resultPath = path.join(__dirname, 'result.txt');
         fs.writeFileSync(resultPath, `rows=${this.numRows}\ncols=${this.numCols}\n`);
